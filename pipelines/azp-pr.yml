@@ -10,7 +10,7 @@ pr:
       - dev
   paths:
     exclude:
-      - README.md
+      - pipelines/*
 
 
 pool:
