@@ -20,7 +20,7 @@ stages:
     displayName: "Setup Google Cloud SDK"
     steps:
 
-      - script: env
+      - script: printenv
 
       - bash: |
           # Create environment variable for correct distribution
@@ -50,13 +50,22 @@ stages:
               || { echo "[!] Unable to activate the service account."; exit 1; } \
               && echo  [i] "Service account set to $(gcloud config get-value account)."
             }
+        displayName: Microsoft YAML
+        env:
+          GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
+
 #displayName: Check Project Id
       - bash: |
           test ! -z ${GCLOUD_PROJECT_ID:-} \
             || { echo "[!] GCLOUD_PROJECT_ID environment variable must be set."; exit 1; } \
             && echo  [i] "GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
+        env:
+          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
+
 #displayName: Activate Project
       - bash: |
           gcloud config set project ${GCLOUD_PROJECT_ID} \
             || { echo "[!] Unable to set project ${GCLOUD_PROJECT_ID}."; exit 1; } \
             && echo  [i] "gcloud project set to $(gcloud config get-value project)."
+        env:
+          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
