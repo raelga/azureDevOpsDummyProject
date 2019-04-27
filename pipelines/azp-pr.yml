@@ -15,13 +15,13 @@ stages:
     displayName: "Setup Google Cloud SDK"
     steps:
 
-      - name: Check gcloud
+      - displayName: Check gcloud
         bash: |
           which gcloud &> /dev/null \
             || error "gcloud SDK is not installed." \
             && info "gcloud installed with $(gcloud version | grep 'Google Cloud SDK')."
 
-      - name: Check Service Account
+      - displayName: Check Service Account
         bash: |
           test ! -z ${GCLOUD_SERVICE_ACCOUNT:-} \
             || error "GCLOUD_SERVICE_ACCOUNT environment variable must be set." \
@@ -32,13 +32,13 @@ stages:
               && info  "Service account set to $(gcloud config get-value account)."
             }
 
-      - name: Check Project Id
+      - displayName: Check Project Id
         bash: |
           test ! -z ${GCLOUD_PROJECT_ID:-} \
             || error "GCLOUD_PROJECT_ID environment variable must be set." \
             && info  "GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
 
-      - name: Activate Project
+      - displayName: Activate Project
         bash: |
           gcloud config set project ${GCLOUD_PROJECT_ID} \
             || error "Unable to set project ${GCLOUD_PROJECT_ID}." \
