@@ -80,6 +80,7 @@ stages:
 
   - job: InfraDiff
     displayName: "Diff infra things"
+    container: gcloud
     dependsOn:
       - ProviderConfig
     steps:
@@ -96,6 +97,7 @@ stages:
   jobs:
   - job: DEP
     displayName: "Al igual y funciona"
+    container: gcloud
     steps:
       - script: printenv
 
