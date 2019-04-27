@@ -1,8 +1,3 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 pr:
   branches:
     include:
@@ -13,21 +8,38 @@ pr:
       - pipelines/*
 
 stages:
-- stage: Build
+
+- stage: Infra
   jobs:
-  - job: BuildJob
+  - job: ProviderConfig
+    displayName: "Setup Google Cloud SDK"
     steps:
-    - script: echo Building!
-- stage: Test
-  jobs:
-  - job: TestOnWindows
-    steps:
-    - script: echo Testing on Windows!
-  - job: TestOnLinux
-    steps:
-    - script: echo Testing on Linux!
-- stage: Deploy
-  jobs:
-  - job: Deploy
-    steps:
-    - script: echo Deploying the code!
+
+      - name: Check gcloud
+        bash: |
+          which gcloud &> /dev/null \
+            || error "gcloud SDK is not installed." \
+            && info "gcloud installed with $(gcloud version | grep 'Google Cloud SDK')."
+
+      - name: Check Service Account
+        bash: |
+          test ! -z ${GCLOUD_SERVICE_ACCOUNT:-} \
+            || error "GCLOUD_SERVICE_ACCOUNT environment variable must be set." \
+            && {
+              gcloud auth activate-service-account \
+                --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d) \
+              || error "Unable to activate the service account." \
+              && info  "Service account set to $(gcloud config get-value account)."
+            }
+
+      - name: Check Project Id
+        bash: |
+          test ! -z ${GCLOUD_PROJECT_ID:-} \
+            || error "GCLOUD_PROJECT_ID environment variable must be set." \
+            && info  "GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
+
+      - name: Activate Project
+        bash: |
+          gcloud config set project ${GCLOUD_PROJECT_ID} \
+            || error "Unable to set project ${GCLOUD_PROJECT_ID}." \
+            && info  "gcloud project set to $(gcloud config get-value project)."
