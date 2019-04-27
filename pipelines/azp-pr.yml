@@ -10,7 +10,7 @@ pr:
 trigger: none
 
 variables:
-- group: demo
+- group: DEMO
 
 stages:
 
