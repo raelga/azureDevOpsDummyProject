@@ -74,8 +74,23 @@ stages:
 
   - job: InfraDiff
     displayName: "Diff infra things"
+    dependsOn:
+      - ProviderConfig
     steps:
 
+      - script: printenv
+
+      - bash: |
+          gcloud deployment-manager deployments --project ${GCLOUD_PROJECT_ID} list
+        env:
+          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
+
+
+- stage: Storage
+  jobs:
+  - job: DEP
+    displayName: "Al igual y funciona"
+    steps:
       - script: printenv
 
       - bash: |
