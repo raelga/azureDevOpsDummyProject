@@ -88,6 +88,19 @@ stages:
       - script: printenv
 
       - bash: |
+          test ! -z ${GCLOUD_SERVICE_ACCOUNT:-} \
+            || { echo "[!] GCLOUD_SERVICE_ACCOUNT environment variable must be set."; exit 1; } \
+            && {
+              gcloud auth activate-service-account \
+                --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d) \
+              || { echo "[!] Unable to activate the service account."; exit 1; } \
+              && echo  [i] "Service account set to $(gcloud config get-value account)."
+            }
+        displayName: Activate Google Cloud SDK service account
+        env:
+          GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
+
+      - bash: |
           gcloud deployment-manager deployments --project ${GCLOUD_PROJECT_ID} list
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
