@@ -4,12 +4,14 @@
 # https://aka.ms/yaml
 
 pr:
-  - master
-  - dev
+  branches:
+    include:
+      - master
+      - dev
+  paths:
+    exclude:
+      - README.md
 
-path:
-  exclude:
-    - pipelines/*
 
 pool:
   vmImage: 'Ubuntu-16.04'
