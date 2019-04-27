@@ -34,13 +34,14 @@ stages:
 
           # Update the package list and install the Cloud SDK
           sudo apt-get update && sudo apt-get -y install google-cloud-sdk
+        displayName: Install Google Cloud SDK
 
-#displayName: Check gcloud
       - bash: |
           which gcloud &> /dev/null \
             || { echo "[!] gcloud SDK is not installed."; exit 1; } \
             && echo "[i] gcloud installed with $(gcloud version | grep 'Google Cloud SDK')."
-#displayName: Check Service Account
+        displayName: Check Google Cloud SDK version
+
       - bash: |
           test ! -z ${GCLOUD_SERVICE_ACCOUNT:-} \
             || { echo "[!] GCLOUD_SERVICE_ACCOUNT environment variable must be set."; exit 1; } \
@@ -50,22 +51,29 @@ stages:
               || { echo "[!] Unable to activate the service account."; exit 1; } \
               && echo  [i] "Service account set to $(gcloud config get-value account)."
             }
-        displayName: Microsoft YAML
+        displayName: Activate Google Cloud SDK service account
         env:
           GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
 
-#displayName: Check Project Id
       - bash: |
           test ! -z ${GCLOUD_PROJECT_ID:-} \
             || { echo "[!] GCLOUD_PROJECT_ID environment variable must be set."; exit 1; } \
-            && echo  [i] "GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
+            && {
+              gcloud config set project ${GCLOUD_PROJECT_ID} \
+                || { echo "[!] Unable to set project ${GCLOUD_PROJECT_ID}."; exit 1; } \
+                && echo  [i] "gcloud project set to $(gcloud config get-value project).";
+            }
+        displayName: Activate Google Cloud SDK project
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
-#displayName: Activate Project
       - bash: |
-          gcloud config set project ${GCLOUD_PROJECT_ID} \
-            || { echo "[!] Unable to set project ${GCLOUD_PROJECT_ID}."; exit 1; } \
-            && echo  [i] "gcloud project set to $(gcloud config get-value project)."
+          gcloud deployment-manager deployments --project ${GCLOUD_PROJECT_ID} list
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
+
+  - job: InfraDiff
+    displayName: "Diff infra things"
+    steps:
+
+      - script: printenv
