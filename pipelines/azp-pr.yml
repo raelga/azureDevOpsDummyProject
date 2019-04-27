@@ -12,7 +12,7 @@ trigger: none
 resources:
   containers:
   - container: gcloud
-    image:  google/cloud-sdk:242.0.0-alpine
+    image:  google/cloud-sdk:242.0.0-slim
 
 variables:
 - group: DEMO
@@ -40,7 +40,7 @@ stages:
 
       #     # Update the package list and install the Cloud SDK
       #     sudo apt-get update && sudo apt-get -y install google-cloud-sdk
-        displayName: Install Google Cloud SDK
+      # displayName: Install Google Cloud SDK
 
       - bash: |
           which gcloud &> /dev/null \
