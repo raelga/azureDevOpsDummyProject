@@ -77,3 +77,8 @@ stages:
     steps:
 
       - script: printenv
+
+      - bash: |
+          gcloud deployment-manager deployments --project ${GCLOUD_PROJECT_ID} list
+        env:
+          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
