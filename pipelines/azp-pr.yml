@@ -11,8 +11,8 @@ trigger: none
 
 resources:
   containers:
-  - container: gcloud
-    image:  google/cloud-sdk:242.0.0-slim
+  - container: gitopsci
+    image:  raelga/gitopsci:v1.0
 
 variables:
 - group: DEMO
@@ -22,8 +22,8 @@ stages:
 - stage: Infra
   jobs:
   - job: ProviderConfig
-    displayName: "Setup Google Cloud SDK"
-    container: gcloud
+    displayName: "Check Google Cloud SDK"
+    container: gitopsci
     steps:
 
       - script: printenv
@@ -80,7 +80,7 @@ stages:
 
   - job: InfraDiff
     displayName: "Diff infra things"
-    container: gcloud
+    container: gitopsci
     dependsOn:
       - ProviderConfig
     steps:
@@ -105,12 +105,14 @@ stages:
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
+      - script: kubectl version --client=true
+
 
 - stage: Storage
   jobs:
   - job: DEP
     displayName: "Al igual y funciona"
-    container: gcloud
+    container: gitopsci
     steps:
       - script: printenv
 
@@ -131,3 +133,5 @@ stages:
           gcloud deployment-manager deployments --project ${GCLOUD_PROJECT_ID} list
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
+
+      - script: kubectl version --client=true
