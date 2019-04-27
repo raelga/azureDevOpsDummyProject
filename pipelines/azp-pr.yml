@@ -12,10 +12,6 @@ pr:
     exclude:
       - pipelines/*
 
-
-pool:
-  vmImage: 'Ubuntu-16.04'
-
 stages:
 - stage: Build
   jobs:
