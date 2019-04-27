@@ -7,6 +7,10 @@ pr:
   - master
   - dev
 
+path:
+  exclude:
+    - pipelines/*
+
 pool:
   vmImage: 'Ubuntu-16.04'
 
