@@ -14,15 +14,13 @@ stages:
   - job: ProviderConfig
     displayName: "Setup Google Cloud SDK"
     steps:
-
-      - displayName: Check gcloud
-        bash: |
+#displayName: Check gcloud
+      - bash: |
           which gcloud &> /dev/null \
             || error "gcloud SDK is not installed." \
             && info "gcloud installed with $(gcloud version | grep 'Google Cloud SDK')."
-
-      - displayName: Check Service Account
-        bash: |
+#displayName: Check Service Account
+      - bash: |
           test ! -z ${GCLOUD_SERVICE_ACCOUNT:-} \
             || error "GCLOUD_SERVICE_ACCOUNT environment variable must be set." \
             && {
@@ -31,15 +29,13 @@ stages:
               || error "Unable to activate the service account." \
               && info  "Service account set to $(gcloud config get-value account)."
             }
-
-      - displayName: Check Project Id
-        bash: |
+#displayName: Check Project Id
+      - bash: |
           test ! -z ${GCLOUD_PROJECT_ID:-} \
             || error "GCLOUD_PROJECT_ID environment variable must be set." \
             && info  "GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
-
-      - displayName: Activate Project
-        bash: |
+#displayName: Activate Project
+      - bash: |
           gcloud config set project ${GCLOUD_PROJECT_ID} \
             || error "Unable to set project ${GCLOUD_PROJECT_ID}." \
             && info  "gcloud project set to $(gcloud config get-value project)."
