@@ -31,25 +31,25 @@ stages:
 #displayName: Check gcloud
       - bash: |
           which gcloud &> /dev/null \
-            || error "gcloud SDK is not installed." \
-            && info "gcloud installed with $(gcloud version | grep 'Google Cloud SDK')."
+            || { echo "[!] gcloud SDK is not installed."; exit 1; } \
+            && echo "[i] gcloud installed with $(gcloud version | grep 'Google Cloud SDK')."
 #displayName: Check Service Account
       - bash: |
           test ! -z ${GCLOUD_SERVICE_ACCOUNT:-} \
-            || error "GCLOUD_SERVICE_ACCOUNT environment variable must be set." \
+            || { echo "[!] GCLOUD_SERVICE_ACCOUNT environment variable must be set."; exit 1; } \
             && {
               gcloud auth activate-service-account \
                 --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d) \
-              || error "Unable to activate the service account." \
-              && info  "Service account set to $(gcloud config get-value account)."
+              || { echo "[!] Unable to activate the service account."; exit 1; } \
+              && echo  [i] "Service account set to $(gcloud config get-value account)."
             }
 #displayName: Check Project Id
       - bash: |
           test ! -z ${GCLOUD_PROJECT_ID:-} \
-            || error "GCLOUD_PROJECT_ID environment variable must be set." \
-            && info  "GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
+            || { echo "[!] GCLOUD_PROJECT_ID environment variable must be set."; exit 1; } \
+            && echo  [i] "GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
 #displayName: Activate Project
       - bash: |
           gcloud config set project ${GCLOUD_PROJECT_ID} \
-            || error "Unable to set project ${GCLOUD_PROJECT_ID}." \
-            && info  "gcloud project set to $(gcloud config get-value project)."
+            || { echo "[!] Unable to set project ${GCLOUD_PROJECT_ID}."; exit 1; } \
+            && echo  [i] "gcloud project set to $(gcloud config get-value project)."
