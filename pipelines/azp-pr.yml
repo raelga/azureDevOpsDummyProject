@@ -56,6 +56,10 @@ variables:
   #   - GCLOUD_SERVICE_ACCOUNT: The Google Cloud Service Account (as secret)
   #   - GCLOUD_PROJECT_ID: The Google Cloud Project ID (as secret)
 
+#
+# Setup pipeline stages
+#
+
 stages:
 
 - stage: Environment check
