@@ -8,17 +8,17 @@ name: Pull request pipeline
 # Enable Pull request validation triggers
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema#pr-trigger
 pr:
-  batch: true
+  autoCancel: false # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR.
   branches:
-    include:
+    include: # branch names which will trigger a build
       - stg
       - int
       - dev
-    exclude:
+    exclude: # branch names which will not trigger a build
       - pro
       - master
   paths:
-    exclude:
+    exclude: # file paths which will not trigger a build
     - README.md
     - LICENSE.md
     - docs/*
