@@ -9,14 +9,13 @@ name: Pull request pipeline
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema#pr-trigger
 pr:
   autoCancel: false # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR.
-  branches:
-    include: # branch names which will trigger a build
-      - stg
-      - int
-      - dev
-    exclude: # branch names which will not trigger a build
-      - pro
-      - master
+  # branches:
+  #   include: # branch names which will trigger a build
+  #     - stg
+  #     - int
+  #     - master
+  #   exclude: # branch names which will not trigger a build
+  #     - dev
   paths:
     exclude: # file paths which will not trigger a build
     - README.md
