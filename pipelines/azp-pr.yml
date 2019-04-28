@@ -74,6 +74,8 @@ variables:
 # Paths
 - name: env.paths.infra
   value: infra/$(provider)/deployments/$(env.name)
+- name: env.yamls.infra
+  value: infra/$(provider)/deployments/$(env.name)/*yaml
 - name: env.paths.storage
   value: storage/$(env.name)
 - name: env.paths.k8s
@@ -85,17 +87,21 @@ variables:
 
 stages:
 
-# - stage: PreFlight
-#   jobs:
-#   - job: PreFlightChecks
-#     steps:
-#       - script: printenv
-#         displayName: Print environment
-#       - bash: |
-#           echo "$(env.requiresPrefix)"
-#           echo "$(env.prefix)"
-#           echo "$(env.name)"
-#           if $(env.requiresPrefix); then echo "$(env.prefix)-$(env.name)"; fi;
+- stage: Plan
+  jobs:
+  - job: PlanDescription
+    steps:
+      - bash: |
+          echo "Trigger information:"
+          echo "  Reason          $(Build.Reason)"
+          echo "  Environment     $(env.name)"
+          echo "  RequiresPrefix? $(env.requiresPrefix)"
+          echo "  Prefix          $(env.prefix)"
+          echo "  Provider        $(env.provider)"
+          echo "  Path Infra      $(env.paths.infra)"
+          echo "  YAMLs Infr      $(env.yaml.infra)"
+          echo "  Path Storage    $(env.paths.storage)"
+          echo "  Path K8S        $(env.paths.k8s)"
 
 - stage: Environment
   displayName: Environment
