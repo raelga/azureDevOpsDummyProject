@@ -49,7 +49,9 @@ variables:
 - name: ENVIRONMENT
   value: $(System.PullRequest.TargetBranch)
 - name: PREFIX
-  value: "PR$(System.PullRequest.PullRequestNumber)"
+  value: "pr$(System.PullRequest.PullRequestNumber)"
+- name: K8S_CLUSTER
+  value: "$(PREFIX)-$(ENVIRONMENT)-gke"
 - group: gcloud-environment
   # The gcloud-environment contains:
   #   - GCLOUD_SERVICE_ACCOUNT: The Google Cloud Service Account (as secret)
@@ -62,11 +64,11 @@ variables:
 stages:
 
 - stage: Environment
-  displayName: CI Environment
+  displayName: Environment
   jobs:
 
   - job: GoogleCloudEnvCheck
-    displayName: Check Google Cloud
+    displayName: Check gcloud
     container: gcloud
     steps:
 
@@ -133,7 +135,7 @@ stages:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
   - job: gitopsciEnvCheck
-    displayName: Check gitopsci tools
+    displayName: Check gitopsci
     container: gitopsci
     steps:
 
@@ -147,9 +149,33 @@ stages:
         displayName: Check Google Cloud SDK version
 
       - bash: |
+          if test ! -z ${GCLOUD_SERVICE_ACCOUNT:-};
+          then
+            if gcloud auth activate-service-account \
+                --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d);
+            then
+              echo "[i] Service account $(gcloud config get-value account) set.";
+            else
+              echo "[!] Unable to activate the service account.";
+              exit 1;
+            fi
+          else
+            echo "[!] GCLOUD_SERVICE_ACCOUNT environment variable must be set.";
+            exit 1;
+          fi
+        displayName: Check Google Cloud SDK service account
+        env:
+          GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
+
+      - bash: |
           if which kubectl &> /dev/null;
           then
-            echo "[i] kubectl installed with $(kubectl version --client=true).";
+            if test $(sed 's/.*Minor:"\([~0-9]\+\)".*/\1/' <(kubectl version --client=true 2>&1) ) -ge 14;
+            then
+              echo "[i] kubectl installed with $(kubectl version --client=true).";
+            else
+              echo "[!] kubectl minor version should be greather than 14."
+            fi
           else
             echo "[!] kubectl is not installed."; exit 1;
           fi
