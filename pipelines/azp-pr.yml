@@ -61,7 +61,7 @@ variables:
 
 stages:
 
-- stage: Environment
+- stage: Environment Check
   displayName: CI Environment
   jobs:
 
@@ -111,9 +111,9 @@ stages:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
       - script: >
-          gcloud projects get-iam-policy $(GCLOUD_PROJECT_ID)
-            --flatten="bindings[].members"
-            --format='table(bindings.role)'
+          gcloud projects get-iam-policy $(GCLOUD_PROJECT_ID) \
+            --flatten="bindings[].members" \
+            --format='table(bindings.role)' \
             --filter="bindings.members:$(gcloud config get-value account)"
         displayName: List Google Cloud SDK service account roles
         env:
