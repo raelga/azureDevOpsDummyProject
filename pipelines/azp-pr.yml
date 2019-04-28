@@ -61,7 +61,7 @@ variables:
 
 stages:
 
-- stage: Environment check
+- stage: environment-check
   displayName: Check CI environment
   jobs:
 
@@ -118,15 +118,13 @@ stages:
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
-- stage: Infrastructure
+- stage: infrastructure
   displayName: Infrastructure deploy
   jobs:
 
   - job: InfrastructureDiff
     displayName: "Preview infrastructure changes"
     container: gcloud
-    dependsOn:
-      - GoogleCloudEnvCheck
     steps:
 
       - script: >
@@ -156,7 +154,7 @@ stages:
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
-- stage: Storage
+- stage: storage
   displayName: Storage deploy
   jobs:
 
@@ -186,12 +184,12 @@ stages:
             echo gsutil ls gs://$name $bucket
           done < <(find storage/${ENVIRONMENT} -maxdepth 1 -mindepth 1 -type d)
 
-- stage: Kubernetes
+- stage: kubernetes
   displayName: Kubernetes deploy
   jobs:
 
-  - job: Check k8s environment
-    displayName: "Check bucket existence"
+  - job: k8s-env
+    displayName: Check bucket existence
     container: gcloud
     steps:
 
