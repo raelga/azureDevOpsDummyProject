@@ -1,4 +1,4 @@
-name: $(BuildID)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+name: $(BuildID)_$(Date:yyyyMMdd)$(Rev:.r)
 
 #
 # Setup pipeline triggers
@@ -62,11 +62,11 @@ variables:
 stages:
 
 - stage: Environment
-  displayName: Check CI environment
+  displayName: CI Environment
   jobs:
 
   - job: GoogleCloudEnvCheck
-    displayName: Check Google Cloud environment"
+    displayName: Check Google Cloud Environment"
     container: gcloud
     steps:
 
@@ -110,10 +110,11 @@ stages:
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
-      - script: gcloud projects get-iam-policy $(GCLOUD_PROJECT_ID) \
-          --flatten="bindings[].members" \
-          --format='table(bindings.role)' \
-          --filter="bindings.members:$(gcloud config get-value account)"
+      - script: >
+          gcloud projects get-iam-policy $(GCLOUD_PROJECT_ID)
+            --flatten="bindings[].members"
+            --format='table(bindings.role)'
+            --filter="bindings.members:$(gcloud config get-value account)"
         displayName: List Google Cloud SDK service account roles
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
