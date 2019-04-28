@@ -47,7 +47,7 @@ variables:
 - name: PROVIDER
   value: gcp
 - name: ENVIRONMENT
-  value: $(System.PullRequest.TargetBranchName)
+  value: $(System.PullRequest.TargetBranch)
 - name: PREFIX
   value: "PR$(System.PullRequest.PullRequestNumber)"
 - group: gcloud-environment
@@ -66,7 +66,7 @@ stages:
   jobs:
 
   - job: GoogleCloudEnvCheck
-    displayName: Check Google Cloud Environment"
+    displayName: Check Google Cloud
     container: gcloud
     steps:
 
@@ -103,7 +103,7 @@ stages:
           then
             echo "[i] GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
             PROJECT_STATUS=
-            if test "ACTIVE" == $(gcloud projects describe ${GCLOUD_PROJECT_ID} \
+            if test ACTIVE == $(gcloud projects describe ${GCLOUD_PROJECT_ID} \
               --format="value(lifecycleState)"
             );
             then
@@ -121,11 +121,11 @@ stages:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
 - stage: Infrastructure
-  displayName: Infrastructure deploy
+  #displayName: Infrastructure
   jobs:
 
   - job: InfrastructureDiff
-    displayName: "Preview infrastructure changes"
+    displayName: "Preview changes"
     container: gcloud
     steps:
 
@@ -143,6 +143,7 @@ stages:
             test -z ${PREFIX} || name=${PREFIX}-${name};
             echo "Preview $name $manifest";
           done < <(find infra/${PROVIDER}/deployments/${ENVIRONMENT} -name '*yaml');
+        displayName: Activate Google Cloud SDK service account
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
