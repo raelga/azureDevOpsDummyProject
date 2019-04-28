@@ -186,55 +186,55 @@ stages:
 #           fi
 #         displayName: Check kubectl version
 
-- stage: Infrastructure
-  displayName: Infrastructure
-  jobs:
+# - stage: Infrastructure
+#   displayName: Infrastructure
+#   jobs:
 
-  - job: InfrastructureDiff
-    displayName: "Preview changes"
-    container: gcloud
-    steps:
+#   - job: InfrastructureDiff
+#     displayName: "Preview changes"
+#     container: gcloud
+#     steps:
 
-      - script: >
-          gcloud auth activate-service-account
-          --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d)
-        displayName: Activate Google Cloud SDK service account
-        env:
-          GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
+#       - script: >
+#           gcloud auth activate-service-account
+#           --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d)
+#         displayName: Activate Google Cloud SDK service account
+#         env:
+#           GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
 
-      - bash: |
-          while read manifest;
-          do
-            name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
-            test -z ${PREFIX} || name=${PREFIX}-${name};
-            echo "Preview:";
-            echo "    Deployment  ${name}";
-            echo "    Manifest    ${manifest}";
-            echo "    Project     ${GCLOUD_PROJECT_ID}";
-          done < <(find $(env.paths.infra) -name '*yaml');
-        displayName: Preview changes with deployment manager
-        env:
-          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
+#       - bash: |
+#           while read manifest;
+#           do
+#             name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
+#             test -z ${PREFIX} || name=${PREFIX}-${name};
+#             echo "Preview:";
+#             echo "    Deployment  ${name}";
+#             echo "    Manifest    ${manifest}";
+#             echo "    Project     ${GCLOUD_PROJECT_ID}";
+#           done < <(find $(env.paths.infra) -name '*yaml');
+#         displayName: Preview changes with deployment manager
+#         env:
+#           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
-  - job: InfrastructureApply
-    displayName: "Apply changes"
-    container: gcloud
-    dependsOn:
-      - InfrastructureDiff
-    steps:
-      - bash: |
-          while read manifest;
-          do
-            name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
-            test -z ${PREFIX} || name=${PREFIX}-${name};
-            echo "Update:";
-            echo "    Deployment  $name";
-            echo "    Manifest    $manifest";
-            echo "    Project     ${GCLOUD_PROJECT_ID}";
-          done < <(find $(env.paths.infra) -name '*yaml');
-        displayName: Apply changes with deployment manager
-        env:
-          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
+#   - job: InfrastructureApply
+#     displayName: "Apply changes"
+#     container: gcloud
+#     dependsOn:
+#       - InfrastructureDiff
+#     steps:
+#       - bash: |
+#           while read manifest;
+#           do
+#             name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
+#             test -z ${PREFIX} || name=${PREFIX}-${name};
+#             echo "Update:";
+#             echo "    Deployment  $name";
+#             echo "    Manifest    $manifest";
+#             echo "    Project     ${GCLOUD_PROJECT_ID}";
+#           done < <(find $(env.paths.infra) -name '*yaml');
+#         displayName: Apply changes with deployment manager
+#         env:
+#           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
 - stage: Storage
   displayName: Storage deploy
@@ -270,7 +270,7 @@ stages:
             echo "##vso[task.setvariable variable=Exists;isOutput=true]false";
           fi
         name: storageSources
-        condition: eq(storageFolder.Exists,'true')
+        condition: eq(outputs['storageFolder.Exists'],'true')
         displayName: Check if there are storage source folders
 
   - job: UpdateStorage
