@@ -246,7 +246,7 @@ stages:
     steps:
 
       - bash: |
-          if test -d $(env.paths.storage);
+          if test -d $(env.paths.storage)x;
           then
             echo "[i] $(env.paths.storage) folder found.";
             echo "##vso[task.setvariable variable=Exists;isOutput=true]true";
@@ -261,7 +261,7 @@ stages:
           STORAGE_SOURCES_COUNT=$( \
             find $(env.paths.storage) -maxdepth 1 -mindepth 1 -type d | wc -l
           );
-          if test ${STORAGE_SOURCES_COUNT} -eq 0;
+          if test ${STORAGE_SOURCES_COUNT} -gt 0;
           then
             echo "[i] ${STORAGE_SOURCES_COUNT} storage sources found.";
             echo "##vso[task.setvariable variable=Exists;isOutput=true]true";
