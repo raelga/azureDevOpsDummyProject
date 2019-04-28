@@ -48,19 +48,19 @@ variables:
   # The gcloud-environment contains:
   #   - GCLOUD_SERVICE_ACCOUNT: The Google Cloud Service Account (as secret)
   #   - GCLOUD_PROJECT_ID: The Google Cloud Project ID (as secret)
-- name: PROVIDER
+- name: provider
   value: gcp
-- name: ENVIRONMENT
+- name: environment
   value: $(System.PullRequest.TargetBranch)
-- name: PREFIX
+- name: prefix
   value: "pr$(System.PullRequest.PullRequestNumber)"
 # Paths
-- name: INFRA_PATH
-  value: infra/${PROVIDER}/deployments/${ENVIRONMENT}
-- name: STORAGE_PATH
-  value: storage/${ENVIRONMENT}
-- name: K8S_PATH
-  value: k8s/${ENVIRONMENT}
+- name: paths.infra
+  value: infra/$(provider)/deployments/$(environment)
+- name: paths.storage
+  value: storage/$(environment)
+- name: paths.k8s
+  value: k8s/$(environment)
 
 #
 # Setup pipeline stages
@@ -187,7 +187,9 @@ stages:
         displayName: Check kubectl version
 
 - stage: Infrastructure
-  #displayName: Infrastructure
+  displayName: Infrastructure
+  env:
+    INFRA_PATH: $(paths.infra)
   jobs:
 
   - job: InfrastructureDiff
@@ -208,12 +210,11 @@ stages:
             name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
             test -z ${PREFIX} || name=${PREFIX}-${name};
             echo "Preview:";
-            echo "    Deployment  $name";
-            echo "    Manifest    $manifest";
+            echo "    Deployment  ${name}";
+            echo "    Manifest    ${manifest}";
+            echo "    Project     ${GCLOUD_PROJECT_ID}";
           done < <(find ${INFRA_PATH} -name '*yaml');
         displayName: Preview changes with deployment manager
-        env:
-          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
   - job: InfrastructureApply
     displayName: "Apply changes"
@@ -229,6 +230,7 @@ stages:
             echo "Update:";
             echo "    Deployment  $name";
             echo "    Manifest    $manifest";
+            echo "    Project     ${GCLOUD_PROJECT_ID}";
           done < <(find ${INFRA_PATH} -name '*yaml');
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
@@ -238,7 +240,7 @@ stages:
   jobs:
 
   - job: CheckBuckets
-    displayName: Check buckets existence
+    displayName: Check buckets
     container: gcloud
     steps:
 
@@ -259,7 +261,7 @@ stages:
         displayName: Check if the buckets exists
 
   - job: SyncBuckets
-    displayName: Update buckets content
+    displayName: Update content
     container: gcloud
     dependsOn:
       - CheckBuckets
@@ -303,13 +305,15 @@ stages:
           GKE_MANIFEST_COUNT=$( \
             egrep -l -o '^\s+- name.\s+cluster-name' ${INFRA_PATH} | wc -l
           );
-          if test ${GKE_MANIFEST_COUNT} -eq 0
+          if test ${GKE_MANIFEST_COUNT} -eq 0;
           then
             echo "[i] No cluster manifest found, skipping kubernetes stage.";
-            echo "##vso[task.setvariable variable=Exists;isOutput=true]false"
-          elif test ${GKE_MANIFEST_COUNT} -gt 1
+            echo "##vso[task.setvariable variable=Exists;isOutput=true]false";
+          elif test ${GKE_MANIFEST_COUNT} -gt 1;
+          then
             echo "[!] More than one cluster manifest found.";
-            exit;
+            echo "##vso[task.setvariable variable=Exists;isOutput=true]false";
+            exit 1;
           else
             echo "[i] Cluster manifest found.";
             echo "##vso[task.setvariable variable=Exists;isOutput=true]true"
