@@ -65,13 +65,13 @@ stages:
   displayName: CI Environment
   jobs:
 
-  - script: printenv
-    displayName: Print environment
-
   - job: GoogleCloudEnvCheck
     displayName: Check Google Cloud
     container: gcloud
     steps:
+
+      - script: printenv
+        displayName: Print environment
 
       - bash: |
           if which gcloud &> /dev/null;
