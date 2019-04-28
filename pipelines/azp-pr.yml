@@ -102,20 +102,21 @@ stages:
           if test ! -z ${GCLOUD_PROJECT_ID:-};
           then
             echo "[i] GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
+            PROJECT_STATUS=
+            if "ACTIVE" == $(gcloud projects describe ${GCLOUD_PROJECT_ID} \
+              --format="value(lifecycleState)"
+            );
+            then
+            echo "[i] ${GCLOUD_PROJECT_ID} project is ACTIVE.";
+            else
+              echo "[!] ${GCLOUD_PROJECT_ID} status must be active.";
+              exit 1;
+            fi
           else
             echo "[!] GCLOUD_PROJECT_ID environment variable must be set.";
             exit 1;
           fi
         displayName: Check Google Cloud SDK project
-        env:
-          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
-
-      - script: >
-          gcloud projects get-iam-policy $(GCLOUD_PROJECT_ID) \
-            --flatten="bindings[].members" \
-            --format='table(bindings.role)' \
-            --filter="bindings.members:$(gcloud config get-value account)"
-        displayName: List Google Cloud SDK service account roles
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
