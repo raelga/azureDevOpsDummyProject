@@ -246,7 +246,7 @@ stages:
     steps:
 
       - bash: |
-          if test -d $(env.paths.storage)x;
+          if test -d $(env.paths.storage);
           then
             echo "[i] $(env.paths.storage) folder found.";
             echo "##vso[task.setvariable variable=Exists;isOutput=true]true";
