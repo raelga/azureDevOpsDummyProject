@@ -1,4 +1,4 @@
-#name: Pull request validation pipeline
+name: $(BuildID)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
 #
 # Setup pipeline triggers
