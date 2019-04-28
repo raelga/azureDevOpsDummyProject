@@ -26,7 +26,22 @@ pr:
 
 # Disable Continuous integration (CI) for this pipeline
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema#push-trigger
-trigger: none
+trigger:
+  branches:
+    include: # branch names which will trigger a build
+      - stg
+      - int
+      - master
+    exclude: # branch names which will not trigger a build
+      - dev
+  paths:
+    exclude: # file paths which will not trigger a build
+    - README.md
+    - LICENSE.md
+    - docs/*
+    - helpers/*
+    - scripts/*
+
 
 #
 # Setup pipeline environment
@@ -40,8 +55,6 @@ resources:
     image:  google/cloud-sdk:243.0.0-slim
   - container: gitopsci
     image:  raelga/gitopsci:v1.0
-  - container: debian
-    image:  debian:stable-slim
 
 # Setup variable groups
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema#variables
@@ -70,173 +83,173 @@ variables:
 
 stages:
 
-# - stage: Environment
-#   displayName: Environment
-#   jobs:
+- stage: Environment
+  displayName: Environment
+  jobs:
 
-#   - job: GoogleCloudEnvCheck
-#     displayName: Check gcloud
-#     container: gcloud
-#     steps:
+  - job: GoogleCloudEnvCheck
+    displayName: Check gcloud
+    container: gcloud
+    steps:
 
-#       - script: printenv
-#         displayName: Print environment
+      - script: printenv
+        displayName: Print environment
 
-#       - bash: |
-#           if which gcloud &> /dev/null;
-#           then
-#             echo "[i] gcloud installed with $(gcloud version | grep 'Google Cloud SDK').";
-#           else
-#             echo "[!] gcloud SDK is not installed."; exit 1;
-#           fi
-#         displayName: Check Google Cloud SDK version
+      - bash: |
+          if which gcloud &> /dev/null;
+          then
+            echo "[i] gcloud installed with $(gcloud version | grep 'Google Cloud SDK').";
+          else
+            echo "[!] gcloud SDK is not installed."; exit 1;
+          fi
+        displayName: Check Google Cloud SDK version
 
-#       - bash: |
-#           if which gsutil &> /dev/null;
-#           then
-#             echo "[i] gsutil installed with $(gsutil version).";
-#           else
-#             echo "[!] gsutil is not installed."; exit 1;
-#           fi
-#         displayName: Check gsutil version
+      - bash: |
+          if which gsutil &> /dev/null;
+          then
+            echo "[i] gsutil installed with $(gsutil version).";
+          else
+            echo "[!] gsutil is not installed."; exit 1;
+          fi
+        displayName: Check gsutil version
 
-#       - bash: |
-#           if test ! -z ${GCLOUD_SERVICE_ACCOUNT:-};
-#           then
-#             if gcloud auth activate-service-account \
-#                 --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d);
-#             then
-#               echo "[i] Service account $(gcloud config get-value account) set.";
-#             else
-#               echo "[!] Unable to activate the service account.";
-#               exit 1;
-#             fi
-#           else
-#             echo "[!] GCLOUD_SERVICE_ACCOUNT environment variable must be set.";
-#             exit 1;
-#           fi
-#         displayName: Check Google Cloud SDK service account
-#         env:
-#           GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
+      - bash: |
+          if test ! -z ${GCLOUD_SERVICE_ACCOUNT:-};
+          then
+            if gcloud auth activate-service-account \
+                --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d);
+            then
+              echo "[i] Service account $(gcloud config get-value account) set.";
+            else
+              echo "[!] Unable to activate the service account.";
+              exit 1;
+            fi
+          else
+            echo "[!] GCLOUD_SERVICE_ACCOUNT environment variable must be set.";
+            exit 1;
+          fi
+        displayName: Check Google Cloud SDK service account
+        env:
+          GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
 
-#       - bash: |
-#           if test ! -z ${GCLOUD_PROJECT_ID:-};
-#           then
-#             echo "[i] GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
-#             PROJECT_STATUS=
-#             if test ACTIVE == $(gcloud projects describe ${GCLOUD_PROJECT_ID} \
-#               --format="value(lifecycleState)"
-#             );
-#             then
-#             echo "[i] ${GCLOUD_PROJECT_ID} project is ACTIVE.";
-#             else
-#               echo "[!] ${GCLOUD_PROJECT_ID} status must be active.";
-#               exit 1;
-#             fi
-#           else
-#             echo "[!] GCLOUD_PROJECT_ID environment variable must be set.";
-#             exit 1;
-#           fi
-#         displayName: Check Google Cloud SDK project
-#         env:
-#           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
+      - bash: |
+          if test ! -z ${GCLOUD_PROJECT_ID:-};
+          then
+            echo "[i] GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
+            PROJECT_STATUS=
+            if test ACTIVE == $(gcloud projects describe ${GCLOUD_PROJECT_ID} \
+              --format="value(lifecycleState)"
+            );
+            then
+            echo "[i] ${GCLOUD_PROJECT_ID} project is ACTIVE.";
+            else
+              echo "[!] ${GCLOUD_PROJECT_ID} status must be active.";
+              exit 1;
+            fi
+          else
+            echo "[!] GCLOUD_PROJECT_ID environment variable must be set.";
+            exit 1;
+          fi
+        displayName: Check Google Cloud SDK project
+        env:
+          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
-#   - job: gitopsciEnvCheck
-#     displayName: Check gitopsci
-#     container: gitopsci
-#     steps:
+  - job: gitopsciEnvCheck
+    displayName: Check gitopsci
+    container: gitopsci
+    steps:
 
-#       - bash: |
-#           if which gcloud &> /dev/null;
-#           then
-#             echo "[i] gcloud installed with $(gcloud version | grep 'Google Cloud SDK').";
-#           else
-#             echo "[!] gcloud SDK is not installed."; exit 1;
-#           fi
-#         displayName: Check Google Cloud SDK version
+      - bash: |
+          if which gcloud &> /dev/null;
+          then
+            echo "[i] gcloud installed with $(gcloud version | grep 'Google Cloud SDK').";
+          else
+            echo "[!] gcloud SDK is not installed."; exit 1;
+          fi
+        displayName: Check Google Cloud SDK version
 
-#       - bash: |
-#           if test ! -z ${GCLOUD_SERVICE_ACCOUNT:-};
-#           then
-#             if gcloud auth activate-service-account \
-#                 --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d);
-#             then
-#               echo "[i] Service account $(gcloud config get-value account) set.";
-#             else
-#               echo "[!] Unable to activate the service account.";
-#               exit 1;
-#             fi
-#           else
-#             echo "[!] GCLOUD_SERVICE_ACCOUNT environment variable must be set.";
-#             exit 1;
-#           fi
-#         displayName: Check Google Cloud SDK service account
-#         env:
-#           GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
+      - bash: |
+          if test ! -z ${GCLOUD_SERVICE_ACCOUNT:-};
+          then
+            if gcloud auth activate-service-account \
+                --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d);
+            then
+              echo "[i] Service account $(gcloud config get-value account) set.";
+            else
+              echo "[!] Unable to activate the service account.";
+              exit 1;
+            fi
+          else
+            echo "[!] GCLOUD_SERVICE_ACCOUNT environment variable must be set.";
+            exit 1;
+          fi
+        displayName: Check Google Cloud SDK service account
+        env:
+          GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
 
-#       - bash: |
-#           if which kubectl &> /dev/null;
-#           then
-#             if test $(sed 's/.*Minor:"\([~0-9]\+\)".*/\1/' <(kubectl version --client=true 2>&1) ) -ge 14;
-#             then
-#               echo "[i] kubectl installed with $(kubectl version --client=true).";
-#             else
-#               echo "[!] kubectl minor version should be greather than 14."
-#             fi
-#           else
-#             echo "[!] kubectl is not installed."; exit 1;
-#           fi
-#         displayName: Check kubectl version
+      - bash: |
+          if which kubectl &> /dev/null;
+          then
+            if test $(sed 's/.*Minor:"\([~0-9]\+\)".*/\1/' <(kubectl version --client=true 2>&1) ) -ge 14;
+            then
+              echo "[i] kubectl installed with $(kubectl version --client=true).";
+            else
+              echo "[!] kubectl minor version should be greather than 14."
+            fi
+          else
+            echo "[!] kubectl is not installed."; exit 1;
+          fi
+        displayName: Check kubectl version
 
-# - stage: Infrastructure
-#   displayName: Infrastructure
-#   jobs:
+- stage: Infrastructure
+  displayName: Infrastructure
+  jobs:
 
-#   - job: InfrastructureDiff
-#     displayName: "Preview changes"
-#     container: gcloud
-#     steps:
+  - job: InfrastructureDiff
+    displayName: "Preview changes"
+    container: gcloud
+    steps:
 
-#       - script: >
-#           gcloud auth activate-service-account
-#           --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d)
-#         displayName: Activate Google Cloud SDK service account
-#         env:
-#           GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
+      - script: >
+          gcloud auth activate-service-account
+          --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d)
+        displayName: Activate Google Cloud SDK service account
+        env:
+          GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
 
-#       - bash: |
-#           while read manifest;
-#           do
-#             name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
-#             test -z $(env.prefix) || name=$(env.prefix)-${name};
-#             echo "Preview:";
-#             echo "    Deployment  ${name}";
-#             echo "    Manifest    ${manifest}";
-#             echo "    Project     ${GCLOUD_PROJECT_ID}";
-#           done < <(find $(env.paths.infra) -name '*yaml');
-#         displayName: Preview changes with deployment manager
-#         env:
-#           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
+      - bash: |
+          while read manifest;
+          do
+            name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
+            test -z $(env.prefix) || name=$(env.prefix)-${name};
+            echo "Preview:";
+            echo "    Deployment  ${name}";
+            echo "    Manifest    ${manifest}";
+            echo "    Project     ${GCLOUD_PROJECT_ID}";
+          done < <(find $(env.paths.infra) -name '*yaml');
+        displayName: Preview changes with deployment manager
+        env:
+          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
-#   - job: InfrastructureApply
-#     displayName: "Apply changes"
-#     container: gcloud
-#     dependsOn:
-#       - InfrastructureDiff
-#     steps:
-#       - bash: |
-#           while read manifest;
-#           do
-#             name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
-#             test -z $(env.prefix) || name=$(env.prefix)-${name};
-#             echo "Update:";
-#             echo "    Deployment  $name";
-#             echo "    Manifest    $manifest";
-#             echo "    Project     ${GCLOUD_PROJECT_ID}";
-#           done < <(find $(env.paths.infra) -name '*yaml');
-#         displayName: Apply changes with deployment manager
-#         env:
-#           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
+  - job: InfrastructureApply
+    displayName: "Apply changes"
+    container: gcloud
+    dependsOn:
+      - InfrastructureDiff
+    steps:
+      - bash: |
+          while read manifest;
+          do
+            name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
+            test -z $(env.prefix) || name=$(env.prefix)-${name};
+            echo "Update:";
+            echo "    Deployment  $name";
+            echo "    Manifest    $manifest";
+            echo "    Project     ${GCLOUD_PROJECT_ID}";
+          done < <(find $(env.paths.infra) -name '*yaml');
+        displayName: Apply changes with deployment manager
+        env:
+          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
 - stage: Storage
   displayName: Storage deploy
