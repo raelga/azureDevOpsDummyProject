@@ -239,24 +239,51 @@ stages:
   displayName: Storage deploy
   jobs:
 
-  - job: CheckBuckets
+  - job: CheckStorage
     displayName: Check buckets
     container: gcloud
     steps:
 
       - bash: |
           gcloud auth activate-service-account \
-            --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d)
+            --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d);
         displayName: Activate Google Cloud SDK service account
         env:
           GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
 
       - bash: |
+          if test -d $(env.paths.storage);
+          then
+            echo "[i] $(env.paths.storage) storage folder found.";
+            echo "##vso[task.setvariable variable=Exists;isOutput=true]true";
+          else
+            echo "[i] No storage folder found, skipping storage stage.";
+            echo "##vso[task.setvariable variable=Exists;isOutput=true]false";
+          fi
+        name: storageFolder
+        displayName: Check if the $(env.paths.storage) folder exists
+
+      - bash: |
+          STORAGE_SOURCES_COUNT=$( \
+            find $(env.paths.storage) -maxdepth 1 -mindepth 1 -type d | wc -l
+          );
+          if test ${STORAGE_SOURCES_COUNT} -eq 0;
+          then
+            echo "[i] ${STORAGE_SOURCES_COUNT} storage sources found.";
+            echo "##vso[task.setvariable variable=Exists;isOutput=true]true";
+          else
+            echo "[i] No storage sources found, skipping storage stage.";
+            echo "##vso[task.setvariable variable=Exists;isOutput=true]false";
+          fi
+        name: storageSources
+        displayName: Check if there are storage source folders
+
+      - bash: |
           while read bucket_src;
           do
-            bucket=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src})
-            test -z ${PREFIX} || name=${PREFIX}-${name}
-            echo gsutil ls gs://$name
+            bucket=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src});
+            test -z ${PREFIX} || bucket=${PREFIX}-${name};
+            echo gsutil ls gs://$bucket
           done < <(find $(env.paths.storage) -maxdepth 1 -mindepth 1 -type d)
         displayName: Check if the buckets exists
 
@@ -265,6 +292,11 @@ stages:
     container: gcloud
     dependsOn:
       - CheckBuckets
+    condition:
+      and(
+        eq(dependencies.CheckStorage.outputs['storageFolder.Exists'],'true'),
+        eq(dependencies.CheckStorage.outputs['storageSources.Exists'],'true')
+      )
     steps:
 
       - bash: |
@@ -277,8 +309,8 @@ stages:
       - bash: |
           while read bucket_src;
           do
-            bucket=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src})
-            test -z ${PREFIX} || name=${PREFIX}-${name}
+            bucket=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src});
+            test -z ${PREFIX} || bucket=${PREFIX}-${name};
 
             if test -f ${bucket_src}/.ci/delete-extra-files;
             then
@@ -318,6 +350,7 @@ stages:
             echo "[i] Cluster manifest found.";
             echo "##vso[task.setvariable variable=Exists;isOutput=true]true"
           fi
+        name: k8sManifest
         displayName: Check GKE infrastructure manifests
 
 
@@ -326,7 +359,7 @@ stages:
     container: gcloud
     dependsOn: CheckClusterManifests
     condition: >
-      eq(dependencies.CheckClusterManifests.outputs['k8sCluster.Exists'],'true')
+      eq(dependencies.CheckClusterManifests.outputs['k8sManifest.Exists'],'true')
     steps:
 
       - script: >
