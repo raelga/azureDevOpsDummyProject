@@ -85,20 +85,13 @@ variables:
 
 stages:
 
-- stage: Environment
-  displayName: Environment
+- stage: PreFlight
   jobs:
-
   - job: GoogleCloudEnvCheck
-    displayName: Check gcloud
-    container: gcloud
     steps:
-
       - script: printenv
         displayName: Print environment
-
       - bash: |
-
           echo "$(env.addPrefix)"
           echo "$(env.prefix)"
           echo "$(env.name)"
