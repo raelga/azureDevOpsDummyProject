@@ -103,7 +103,7 @@ stages:
           then
             echo "[i] GCLOUD_PROJECT_ID project set to ${GCLOUD_PROJECT_ID}.";
             PROJECT_STATUS=
-            if "ACTIVE" == $(gcloud projects describe ${GCLOUD_PROJECT_ID} \
+            if test "ACTIVE" == $(gcloud projects describe ${GCLOUD_PROJECT_ID} \
               --format="value(lifecycleState)"
             );
             then
