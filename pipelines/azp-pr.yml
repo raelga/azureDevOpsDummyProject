@@ -66,9 +66,9 @@ variables:
 - name: provider
   value: gcp
 - name: env.name
-  value: $[ coalesce('System.PullRequest.TargetBranch', Build.SourceBranch) ]
+  value: $[ coalesce(variables['System.PullRequest.TargetBranch'], variables['Build.SourceBranc']h) ]
 - name: env.prefix
-  value: $[ if($('System.PullRequest.PullRequestNumber'),format('pr{0}-', $(System.PullRequest.PullRequestNumber), Null)
+  value: $[ if($(variables['System.PullRequest.PullRequestNumber'],format('pr{0}-', variables['System.PullRequest.PullRequestNumber']), Null) ]
 # Paths
 - name: env.paths.infra
   value: infra/$(provider)/deployments/$(env.name)
