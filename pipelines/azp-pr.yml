@@ -102,6 +102,7 @@ stages:
           echo "  YAMLs Infr      $(env.yaml.infra)"
           echo "  Path Storage    $(env.paths.storage)"
           echo "  Path K8S        $(env.paths.k8s)"
+          exit 1;
 
 - stage: Environment
   displayName: Environment
