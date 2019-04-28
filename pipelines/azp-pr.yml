@@ -1,4 +1,4 @@
-name: $(BuildID)-PR$(System.PullRequest.PullRequestNumber)
+name: $(BuildID)
 
 #
 # Setup pipeline triggers
