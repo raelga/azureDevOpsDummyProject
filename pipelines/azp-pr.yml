@@ -254,7 +254,7 @@ stages:
       - bash: |
           while read bucket_src;
           do
-            name=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src})
+            bucket=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src})
             test -z ${PREFIX} || name=${PREFIX}-${name}
             echo gsutil ls gs://$name
           done < <(find $(env.paths.storage) -maxdepth 1 -mindepth 1 -type d)
@@ -277,7 +277,7 @@ stages:
       - bash: |
           while read bucket_src;
           do
-            name=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src})
+            bucket=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src})
             test -z ${PREFIX} || name=${PREFIX}-${name}
 
             if test -f ${bucket_src}/.ci/delete-extra-files;
