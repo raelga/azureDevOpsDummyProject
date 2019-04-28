@@ -44,18 +44,23 @@ resources:
 # Setup variable groups
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema#variables
 variables:
+- group: gcloud-environment
+  # The gcloud-environment contains:
+  #   - GCLOUD_SERVICE_ACCOUNT: The Google Cloud Service Account (as secret)
+  #   - GCLOUD_PROJECT_ID: The Google Cloud Project ID (as secret)
 - name: PROVIDER
   value: gcp
 - name: ENVIRONMENT
   value: $(System.PullRequest.TargetBranch)
 - name: PREFIX
   value: "pr$(System.PullRequest.PullRequestNumber)"
-- name: K8S_CLUSTER
-  value: "$(PREFIX)-$(ENVIRONMENT)-gke"
-- group: gcloud-environment
-  # The gcloud-environment contains:
-  #   - GCLOUD_SERVICE_ACCOUNT: The Google Cloud Service Account (as secret)
-  #   - GCLOUD_PROJECT_ID: The Google Cloud Project ID (as secret)
+# Paths
+- name: INFRA_PATH
+  value: infra/${PROVIDER}/deployments/${ENVIRONMENT}
+- name: STORAGE_PATH
+  value: storage/${ENVIRONMENT}
+- name: K8S_PATH
+  value: k8s/${ENVIRONMENT}
 
 #
 # Setup pipeline stages
@@ -202,19 +207,29 @@ stages:
           do
             name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
             test -z ${PREFIX} || name=${PREFIX}-${name};
-            echo "Preview $name $manifest";
-          done < <(find infra/${PROVIDER}/deployments/${ENVIRONMENT} -name '*yaml');
-        displayName: Activate Google Cloud SDK service account
+            echo "Preview:";
+            echo "    Deployment  $name";
+            echo "    Manifest    $manifest";
+          done < <(find ${INFRA_PATH} -name '*yaml');
+        displayName: Preview changes with deployment manager
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
+  - job: InfrastructureApply
+    displayName: "Apply changes"
+    container: gcloud
+    dependsOn:
+      - InfrastructureDiff
+    steps:
       - bash: |
           while read manifest;
           do
             name=$(sed 's#.*/\([a-z]\+\)/\(.*\).yaml$#\1-\2#' <<< ${manifest});
             test -z ${PREFIX} || name=${PREFIX}-${name};
-            echo "Update $name $manifest";
-          done < <(find infra/${PROVIDER}/deployments/${ENVIRONMENT} -name '*yaml');
+            echo "Update:";
+            echo "    Deployment  $name";
+            echo "    Manifest    $manifest";
+          done < <(find ${INFRA_PATH} -name '*yaml');
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
@@ -223,7 +238,7 @@ stages:
   jobs:
 
   - job: CheckBuckets
-    displayName: "Check bucket existence"
+    displayName: Check buckets existence
     container: gcloud
     steps:
 
@@ -235,20 +250,78 @@ stages:
           GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
 
       - bash: |
-          while read bucket;
+          while read bucket_src;
           do
-            name=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket})
+            name=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src})
             test -z ${PREFIX} || name=${PREFIX}-${name}
-            echo gsutil ls gs://$name $bucket
-          done < <(find storage/${ENVIRONMENT} -maxdepth 1 -mindepth 1 -type d)
+            echo gsutil ls gs://$name
+          done < <(find ${STORAGE_PATH} -maxdepth 1 -mindepth 1 -type d)
+        displayName: Check if the buckets exists
 
-- stage: K8bernetes
-  displayName: Kubernetes deploy
+  - job: SyncBuckets
+    displayName: Update buckets content
+    container: gcloud
+    dependsOn:
+      - CheckBuckets
+    steps:
+
+      - bash: |
+          gcloud auth activate-service-account \
+            --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d)
+        displayName: Activate Google Cloud SDK service account
+        env:
+          GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
+
+      - bash: |
+          while read bucket_src;
+          do
+            name=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src})
+            test -z ${PREFIX} || name=${PREFIX}-${name}
+
+            if test -f ${bucket_src}/.ci/delete-extra-files;
+            then
+              echo "Sync deleting extra files.";
+              echo "  Source        ${bucket_src}";
+              echo "  Destination   ${bucket}";
+            else
+              echo "Sync without deleting extra files."
+              echo "  Source        ${bucket_src}";
+              echo "  Destination   ${bucket}";
+            fi
+          done < <(find ${STORAGE_PATH} -maxdepth 1 -mindepth 1 -type d)
+        displayName: Update buckets contents
+
+- stage: Kubernetes
+  displayName: Kubernetes
   jobs:
 
-  - job: KubernetesCheckEnv
-    displayName: Check bucket existence
+  - job: CheckClusterManifests
+    displayName: Check k8s manifests
+    steps:
+
+      - bash: |
+          GKE_MANIFEST_COUNT=$( \
+            egrep -l -o '^\s+- name.\s+cluster-name' ${INFRA_PATH} | wc -l
+          );
+          if test ${GKE_MANIFEST_COUNT} -eq 0
+          then
+            echo "[i] No cluster manifest found, skipping kubernetes stage.";
+            echo "##vso[task.setvariable variable=Exists;isOutput=true]false"
+          elif test ${GKE_MANIFEST_COUNT} -gt 1
+            echo "[!] More than one cluster manifest found.";
+            exit;
+          else
+            echo "[i] Cluster manifest found.";
+            echo "##vso[task.setvariable variable=Exists;isOutput=true]true"
+          fi
+        displayName: Check GKE infrastructure manifests
+
+  - job: CheckCluster
+    displayName: Check k8s cluster
     container: gcloud
+    dependsOn: ChecKubernetesCluster
+    conditions: >
+      eq(dependencies.CheckClusterManifests.outputs['k8sCluster.Exists'],'true')
     steps:
 
       - script: >
