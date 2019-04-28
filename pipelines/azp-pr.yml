@@ -227,18 +227,12 @@ stages:
     container: gcloud
     steps:
 
-      - script: >
-          gcloud auth activate-service-account
+      - bash: |
+          gcloud auth activate-service-account \
             --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d)
         displayName: Activate Google Cloud SDK service account
         env:
           GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
-
-      - script: >
-          gcloud deployment-manager deployments
-            --project ${GCLOUD_PROJECT_ID} list
-        env:
-          GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
       - bash: |
           while read bucket;
