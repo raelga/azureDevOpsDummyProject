@@ -1,4 +1,4 @@
-name: $(BuildID)_$(Date:yyyyMMdd)$(Rev:.r)
+name: $(BuildID)-$(System.PullRequest.TargetBranchName)-PR$(System.PullRequest.PullRequestNumber)
 
 #
 # Setup pipeline triggers
@@ -61,7 +61,7 @@ variables:
 
 stages:
 
-- stage: Environment Check
+- stage: Environment
   displayName: CI Environment
   jobs:
 
@@ -119,7 +119,7 @@ stages:
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
-- stage: Infra
+- stage: Infrastructure
   displayName: Infrastructure deploy
   jobs:
 
