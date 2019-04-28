@@ -232,6 +232,7 @@ stages:
             echo "    Manifest    $manifest";
             echo "    Project     ${GCLOUD_PROJECT_ID}";
           done < <(find $(env.paths.infra) -name '*yaml');
+        displayName: Apply changes with deployment manager
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
@@ -240,28 +241,21 @@ stages:
   jobs:
 
   - job: CheckStorage
-    displayName: Check buckets
+    displayName: Check storage
     container: gcloud
     steps:
 
       - bash: |
-          gcloud auth activate-service-account \
-            --key-file <(echo ${GCLOUD_SERVICE_ACCOUNT} | base64 -d);
-        displayName: Activate Google Cloud SDK service account
-        env:
-          GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
-
-      - bash: |
           if test -d $(env.paths.storage);
           then
-            echo "[i] $(env.paths.storage) storage folder found.";
+            echo "[i] $(env.paths.storage) folder found.";
             echo "##vso[task.setvariable variable=Exists;isOutput=true]true";
           else
             echo "[i] No storage folder found, skipping storage stage.";
             echo "##vso[task.setvariable variable=Exists;isOutput=true]false";
           fi
         name: storageFolder
-        displayName: Check if the $(env.paths.storage) folder exists
+        displayName: Check if the storage folder exists
 
       - bash: |
           STORAGE_SOURCES_COUNT=$( \
@@ -276,16 +270,9 @@ stages:
             echo "##vso[task.setvariable variable=Exists;isOutput=true]false";
           fi
         name: storageSources
+        condition: >
+          eq(dependencies.CheckStorage.outputs['storageFolder.Exists'],'true')
         displayName: Check if there are storage source folders
-
-      - bash: |
-          while read bucket_src;
-          do
-            bucket=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src});
-            test -z ${PREFIX} || bucket=${PREFIX}-${name};
-            echo gsutil ls gs://$bucket
-          done < <(find $(env.paths.storage) -maxdepth 1 -mindepth 1 -type d)
-        displayName: Check if the buckets exists
 
   - job: UpdateStorage
     displayName: Update content
@@ -305,6 +292,15 @@ stages:
         displayName: Activate Google Cloud SDK service account
         env:
           GCLOUD_SERVICE_ACCOUNT: $(GCLOUD_SERVICE_ACCOUNT)
+
+      - bash: |
+          while read bucket_src;
+          do
+            bucket=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src});
+            test -z ${PREFIX} || bucket=${PREFIX}-${name};
+            echo gsutil ls gs://$bucket
+          done < <(find $(env.paths.storage) -maxdepth 1 -mindepth 1 -type d)
+        displayName: Check if the buckets exists
 
       - bash: |
           while read bucket_src;
