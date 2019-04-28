@@ -319,7 +319,7 @@ stages:
   - job: CheckCluster
     displayName: Check k8s cluster
     container: gcloud
-    dependsOn: ChecKubernetesCluster
+    dependsOn: CheckClusterManifests
     condition: >
       eq(dependencies.CheckClusterManifests.outputs['k8sCluster.Exists'],'true')
     steps:
