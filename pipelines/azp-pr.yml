@@ -65,6 +65,9 @@ stages:
   displayName: CI Environment
   jobs:
 
+  - script: printenv
+    displayName: Print environment
+
   - job: GoogleCloudEnvCheck
     displayName: Check Google Cloud
     container: gcloud
@@ -78,6 +81,15 @@ stages:
             echo "[!] gcloud SDK is not installed."; exit 1;
           fi
         displayName: Check Google Cloud SDK version
+
+      - bash: |
+          if which gsutil &> /dev/null;
+          then
+            echo "[i] gsutil installed with $(gsutil version).";
+          else
+            echo "[!] gsutil is not installed."; exit 1;
+          fi
+        displayName: Check gsutil version
 
       - bash: |
           if test ! -z ${GCLOUD_SERVICE_ACCOUNT:-};
@@ -119,6 +131,29 @@ stages:
         displayName: Check Google Cloud SDK project
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
+
+  - job: gitopsciEnvCheck
+    displayName: Check gitopsci tools
+    container: gitopsci
+    steps:
+
+      - bash: |
+          if which gcloud &> /dev/null;
+          then
+            echo "[i] gcloud installed with $(gcloud version | grep 'Google Cloud SDK').";
+          else
+            echo "[!] gcloud SDK is not installed."; exit 1;
+          fi
+        displayName: Check Google Cloud SDK version
+
+      - bash: |
+          if which kubectl &> /dev/null;
+          then
+            echo "[i] kubectl installed with $(kubectl version --client=true).";
+          else
+            echo "[!] kubectl is not installed."; exit 1;
+          fi
+        displayName: Check kubectl version
 
 - stage: Infrastructure
   #displayName: Infrastructure
