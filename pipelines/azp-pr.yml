@@ -68,7 +68,7 @@ variables:
 - name: env.name
   value: $[ coalesce(variables['System.PullRequest.TargetBranch'], variables['Build.SourceBranch']) ]
 - name: env.prefix
-  value: $[ if($(variables['System.PullRequest.PullRequestNumber'],format('pr{0}-', variables['System.PullRequest.PullRequestNumber']), Null) ]
+  value: $[ format('pr{0}', variables['System.PullRequest.PullRequestNumber']) ]
 # Paths
 - name: env.paths.infra
   value: infra/$(provider)/deployments/$(env.name)
