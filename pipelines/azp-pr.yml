@@ -270,7 +270,7 @@ stages:
             echo "##vso[task.setvariable variable=Exists;isOutput=true]false";
           fi
         name: storageSources
-        condition: eq($(storageFolder.Exists),'true')
+        condition: eq(storageFolder.Exists,'true')
         displayName: Check if there are storage source folders
 
   - job: UpdateStorage
