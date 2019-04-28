@@ -63,7 +63,7 @@ variables:
   # The gcloud-environment contains:
   #   - GCLOUD_SERVICE_ACCOUNT: The Google Cloud Service Account (as secret)
   #   - GCLOUD_PROJECT_ID: The Google Cloud Project ID (as secret)
-- name: provider
+- name: env.provider
   value: gcp
 - name: env.name
   value: $[ coalesce(variables['System.PullRequest.TargetBranch'], variables['Build.SourceBranchName']) ]
@@ -73,9 +73,9 @@ variables:
   value: $[ format('pr{0}', variables['System.PullRequest.PullRequestNumber']) ]
 # Paths
 - name: env.paths.infra
-  value: infra/$(provider)/deployments/$(env.name)
+  value: infra/$(env.provider)/deployments/$(env.name)
 - name: env.yamls.infra
-  value: infra/$(provider)/deployments/$(env.name)/*yaml
+  value: infra/$(env.provider)/deployments/$(env.name)/*yaml
 - name: env.paths.storage
   value: storage/$(env.name)
 - name: env.paths.k8s
@@ -89,7 +89,7 @@ stages:
 
 - stage: Plan
   jobs:
-  - job: PlanDescription
+  - job: Description
     steps:
       - bash: |
           echo "Trigger information:"
@@ -99,7 +99,7 @@ stages:
           echo "  Prefix          $(env.prefix)"
           echo "  Provider        $(env.provider)"
           echo "  Path Infra      $(env.paths.infra)"
-          echo "  YAMLs Infr      $(env.yaml.infra)"
+          echo "  YAMLs Infr      $(env.yamls.infra)"
           echo "  Path Storage    $(env.paths.storage)"
           echo "  Path K8S        $(env.paths.k8s)"
           exit 1;
