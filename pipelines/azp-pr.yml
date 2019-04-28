@@ -66,9 +66,9 @@ variables:
 - name: provider
   value: gcp
 - name: env.name
-  value: $(System.PullRequest.TargetBranch)
+  value: coalesce(System.PullRequest.TargetBranch, Build.SourceBranch)
 - name: env.prefix
-  value: "pr$(System.PullRequest.PullRequestNumber)"
+  value: if($(System.PullRequest.PullRequestNumber),format('pr{0}-', $(System.PullRequest.PullRequestNumber), Null)
 # Paths
 - name: env.paths.infra
   value: infra/$(provider)/deployments/$(env.name)
@@ -206,7 +206,7 @@ stages:
   jobs:
 
   - job: InfrastructureDiff
-    displayName: "Preview changes"
+    displayName: Preview changes
     container: gcloud
     steps:
 
@@ -232,7 +232,7 @@ stages:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
   - job: InfrastructureApply
-    displayName: "Apply changes"
+    displayName: Apply changes
     container: gcloud
     dependsOn:
       - InfrastructureDiff
@@ -252,11 +252,11 @@ stages:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
 
 - stage: Storage
-  displayName: Storage deploy
+  displayName: Storage
   jobs:
 
   - job: CheckStorage
-    displayName: Check storage
+    displayName: Check sources
     steps:
 
       - bash: |
