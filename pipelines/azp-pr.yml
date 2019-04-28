@@ -66,7 +66,9 @@ variables:
 - name: provider
   value: gcp
 - name: env.name
-  value: $[ coalesce(variables['System.PullRequest.TargetBranch'], variables['Build.SourceBranch']) ]
+  value: $[ coalesce(variables['System.PullRequest.TargetBranch'], variables['Build.SourceBranchName']) ]
+- name: env.addPrefix
+  value: $[ eq(variables['Build.Reason'], 'PullRequest') ]
 - name: env.prefix
   value: $[ format('pr{0}', variables['System.PullRequest.PullRequestNumber']) ]
 # Paths
@@ -97,8 +99,10 @@ stages:
 
       - bash: |
 
+          echo "$(env.addPrefix)"
           echo "$(env.prefix)"
           echo "$(env.name)"
+          if $(env.addPrefix); then echo "$(env.prefix)-$(env.name)"; fi;
 
 # - stage: Environment
 #   displayName: Environment
