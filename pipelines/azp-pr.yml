@@ -50,17 +50,17 @@ variables:
   #   - GCLOUD_PROJECT_ID: The Google Cloud Project ID (as secret)
 - name: provider
   value: gcp
-- name: environment
+- name: env.name
   value: $(System.PullRequest.TargetBranch)
 - name: prefix
   value: "pr$(System.PullRequest.PullRequestNumber)"
 # Paths
-- name: paths.infra
-  value: infra/$(provider)/deployments/$(environment)
-- name: paths.storage
-  value: storage/$(environment)
-- name: paths.k8s
-  value: k8s/$(environment)
+- name: env.paths.infra
+  value: infra/$(provider)/deployments/$(env.name)
+- name: env.paths.storage
+  value: storage/$(env.name)
+- name: env.paths.k8s
+  value: k8s/$(env.name)
 
 #
 # Setup pipeline stages
@@ -211,11 +211,10 @@ stages:
             echo "    Deployment  ${name}";
             echo "    Manifest    ${manifest}";
             echo "    Project     ${GCLOUD_PROJECT_ID}";
-          done < <(find $(paths.infra) -name '*yaml');
+          done < <(find $(env.paths.infra) -name '*yaml');
         displayName: Preview changes with deployment manager
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
-          #INFRA_PATH: $(paths.infra)
 
   - job: InfrastructureApply
     displayName: "Apply changes"
@@ -232,10 +231,9 @@ stages:
             echo "    Deployment  $name";
             echo "    Manifest    $manifest";
             echo "    Project     ${GCLOUD_PROJECT_ID}";
-          done < <(find ${INFRA_PATH} -name '*yaml');
+          done < <(find $(env.paths.infra) -name '*yaml');
         env:
           GCLOUD_PROJECT_ID: $(GCLOUD_PROJECT_ID)
-          INFRA_PATH: $(paths.infra)
 
 - stage: Storage
   displayName: Storage deploy
@@ -259,10 +257,8 @@ stages:
             name=$(sed 's#.*/\([a-z]\+\)/\(.*\)$#\1-\2#' <<< ${bucket_src})
             test -z ${PREFIX} || name=${PREFIX}-${name}
             echo gsutil ls gs://$name
-          done < <(find ${STORAGE_PATH} -maxdepth 1 -mindepth 1 -type d)
+          done < <(find $(env.paths.storage) -maxdepth 1 -mindepth 1 -type d)
         displayName: Check if the buckets exists
-        env:
-          STORAGE_PATH: $(paths.storage)
 
   - job: SyncBuckets
     displayName: Update content
@@ -294,10 +290,8 @@ stages:
               echo "  Source        ${bucket_src}";
               echo "  Destination   ${bucket}";
             fi
-          done < <(find ${STORAGE_PATH} -maxdepth 1 -mindepth 1 -type d)
+          done < <(find $(env.paths.storage) -maxdepth 1 -mindepth 1 -type d)
         displayName: Update buckets contents
-        env:
-          STORAGE_PATH: $(paths.storage)
 
 - stage: Kubernetes
   displayName: Kubernetes
@@ -309,7 +303,7 @@ stages:
 
       - bash: |
           GKE_MANIFEST_COUNT=$( \
-            egrep -l -o '^\s+- name.\s+cluster-name' ${INFRA_PATH} | wc -l
+            egrep -l -o '^\s+- name.\s+cluster-name' $(env.paths.infra) | wc -l
           );
           if test ${GKE_MANIFEST_COUNT} -eq 0;
           then
@@ -325,8 +319,6 @@ stages:
             echo "##vso[task.setvariable variable=Exists;isOutput=true]true"
           fi
         displayName: Check GKE infrastructure manifests
-        env:
-          INFRA_PATH: $(paths.infra)
 
 
   - job: CheckCluster
