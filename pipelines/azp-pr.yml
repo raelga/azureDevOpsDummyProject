@@ -287,11 +287,11 @@ stages:
           done < <(find $(env.paths.storage) -maxdepth 1 -mindepth 1 -type d)
         displayName: Check if the buckets exists
 
-  - job: SyncBuckets
+  - job: UpdateStorage
     displayName: Update content
     container: gcloud
     dependsOn:
-      - CheckBuckets
+      - CheckStorage
     condition:
       and(
         eq(dependencies.CheckStorage.outputs['storageFolder.Exists'],'true'),
